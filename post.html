@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Note | GhostPaste</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #09090b; --card: #18181b; --accent: #10b981; --border: #27272a; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ececec; margin: 0; padding: 40px 20px; }
+        .wrapper { max-width: 1000px; margin: 0 auto; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .badge { background: rgba(16, 185, 129, 0.1); color: var(--accent); padding: 6px 14px; border-radius: 30px; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .view-badge { background: rgba(99, 102, 241, 0.1); color: #818cf8; border-color: rgba(99, 102, 241, 0.2); }
+        #content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; font-family: 'JetBrains Mono', monospace; line-height: 1.6; white-space: pre-wrap; font-size: 15px; position: relative; }
+        .error { text-align: center; margin-top: 15vh; }
+        .error i { font-size: 4rem; color: #ef4444; margin-bottom: 20px; }
+        a { color: #6366f1; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div id="active" class="wrapper" style="display:none;">
+        <div class="nav">
+            <div style="display: flex; gap: 10px;">
+                <a href="index.html" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i> New Paste</a>
+                <span class="badge view-badge"><i class="fa-solid fa-eye"></i> <span id="count">0</span> views</span>
+            </div>
+            <span id="timer" class="badge"><i class="fa-solid fa-clock"></i> --:--</span>
+        </div>
+        <div id="content"></div>
+    </div>
+
+    <div id="expired" class="error" style="display:none;">
+        <i class="fa-solid fa-skull-crossbones"></i>
+        <h1>Paste Expired</h1>
+        <p>This link is no longer active (TTL 24h expired).</p>
+        <a href="index.html">Go to Homepage</a>
+    </div>
+
+    <script src="post.js"></script>
+</body>
+</html>
