@@ -3,37 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Note | GhostPaste</title>
+    <title>GhostPaste | Secured Content</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #09090b; --card: #18181b; --accent: #10b981; --border: #27272a; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #ececec; margin: 0; padding: 40px 20px; }
-        .wrapper { max-width: 1000px; margin: 0 auto; }
-        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .badge { background: rgba(16, 185, 129, 0.1); color: var(--accent); padding: 6px 14px; border-radius: 30px; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-        .view-badge { background: rgba(99, 102, 241, 0.1); color: #818cf8; border-color: rgba(99, 102, 241, 0.2); }
-        #content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; font-family: 'JetBrains Mono', monospace; line-height: 1.6; white-space: pre-wrap; font-size: 15px; position: relative; }
-        .error { text-align: center; margin-top: 15vh; }
-        .error i { font-size: 4rem; color: #ef4444; margin-bottom: 20px; }
-        a { color: #6366f1; text-decoration: none; font-size: 0.9rem; }
+        :root { --bg: #050509; --panel: #0b0b14; --accent: #10b981; --border: rgba(255, 255, 255, 0.06); }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: #e2e8f0; margin: 0; padding: 40px 20px; }
+        
+        /* Background gradient */
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% -20%, #161a30 0%, transparent 50%); z-index: -1; }
+
+        .viewer-container { max-width: 1000px; margin: 0 auto; animation: panelIn 0.5s ease; }
+        @keyframes panelIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .top-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .stat-badge { background: rgba(16, 185, 129, 0.1); color: var(--accent); padding: 6px 16px; border-radius: 30px; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .time-badge { background: rgba(148, 163, 184, 0.05); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.1); }
+
+        /* Gallery Grid */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .gallery-item { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; height: 220px; }
+        .gallery-item:hover { transform: scale(1.02); border-color: var(--accent); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Code/Text Box */
+        .content-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 30px; font-family: 'Fira Code', monospace; line-height: 1.7; white-space: pre-wrap; font-size: 15px; position: relative; color: #e4e4e7; overflow-x: auto; }
+
+        /* Fullscreen Lightbox */
+        .lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); cursor: zoom-out; }
+        .lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.8); animation: zoomIn 0.3s ease; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .error-state { text-align: center; margin-top: 20vh; color: #ef4444; }
+        .error-state i { font-size: 5rem; margin-bottom: 20px; opacity: 0.6; }
     </style>
 </head>
 <body>
-    <div id="active" class="wrapper" style="display:none;">
-        <div class="nav">
+    <div id="mainView" class="viewer-container" style="display:none;">
+        <div class="top-meta">
+            <a href="index.html" style="color: var(--text-dim); text-decoration: none; font-size: 0.9rem;"><i class="fa-solid fa-arrow-left"></i> Create New</a>
             <div style="display: flex; gap: 10px;">
-                <a href="index.html" style="margin-right: 15px;"><i class="fa-solid fa-plus"></i> New Paste</a>
-                <span class="badge view-badge"><i class="fa-solid fa-eye"></i> <span id="count">0</span> views</span>
+                <span class="stat-badge"><i class="fa-solid fa-eye"></i> <span id="viewCount">1</span> views</span>
+                <span id="expiryTimer" class="stat-badge time-badge"><i class="fa-solid fa-hourglass-half"></i> Calculating...</span>
             </div>
-            <span id="timer" class="badge"><i class="fa-solid fa-clock"></i> --:--</span>
         </div>
-        <div id="content"></div>
+
+        <div id="imageGallery" class="gallery-grid" style="display:none;"></div>
+
+        <div id="textContent" class="content-panel"></div>
     </div>
 
-    <div id="expired" class="error" style="display:none;">
-        <i class="fa-solid fa-skull-crossbones"></i>
-        <h1>Paste Expired</h1>
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <img id="lightboxImg" src="">
+    </div>
+
+    <div id="errorView" class="error-state" style="display:none;">
+        <i class="fa-solid fa-radiation"></i>
+        <h1>Link Expired or Corrupted</h1>
+        <p style="color: #94a3b8;">Notes on GhostPaste Pro are temporary (TTL: 24h).</p>
+        <a href="index.html" style="color: #7c3aed; text-decoration: none; font-weight: 600;">← Back to Home</a>
+    </div>
+
+    <script src="post.js"></script>
+</body>
+</html>
         <p>This link is no longer active (TTL 24h expired).</p>
         <a href="index.html">Go to Homepage</a>
     </div>
