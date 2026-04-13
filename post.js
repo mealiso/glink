@@ -1,39 +1,97 @@
 window.onload = function() {
     const params = new URLSearchParams(window.location.search);
-    const data = params.get('v');
-    const time = parseInt(params.get('t'));
+    const rawData = params.get('data');
     const id = params.get('id');
-    const day = 24 * 60 * 60 * 1000;
 
-    if (!data || !time || (Date.now() - time > day)) {
-        document.getElementById('expired').style.display = 'block';
+    if (!rawData) {
+        showError();
         return;
     }
 
-    // --- View Counter via CountAPI (or similar public API) ---
-    // Note: We use a namespace to keep your counts unique
-    if (id) {
-        fetch(`https://api.countapi.xyz/hit/ghostpaste-pro-v1/${id}`)
-            .then(res => res.json())
-            .then(res => document.getElementById('count').innerText = res.value)
-            .catch(() => document.getElementById('count').innerText = "1");
-    }
-
     try {
-        const decoded = decodeURIComponent(Array.prototype.map.call(atob(data), (c) => {
+        // Decode and Parse JSON
+        const decodedString = decodeURIComponent(Array.prototype.map.call(atob(rawData), (c) => {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
+        
+        const payload = JSON.parse(decodedString);
+        const now = Date.now();
+        const ttl = 24 * 60 * 60 * 1000; // 24 Hours
 
-        document.getElementById('content').innerText = decoded;
-        document.getElementById('active').style.display = 'block';
+        // Check Expiry
+        if (now - payload.t > ttl) {
+            showError("This paste has expired.");
+            return;
+        }
 
-        const updateClock = () => {
-            const remain = day - (Date.now() - time);
-            const h = Math.floor(remain / 3600000);
-            const m = Math.floor((remain % 3600000) / 60000);
-            document.getElementById('timer').innerHTML = `<i class="fa-solid fa-clock"></i> Expires in ${h}h ${m}m`;
+        // --- Render Text Content ---
+        if (payload.c && payload.c.trim() !== "") {
+            document.getElementById('textContent').innerText = payload.c;
+        } else {
+            document.getElementById('textContent').style.display = 'none';
+        }
+
+        // --- Render Image Gallery ---
+        const gallery = document.getElementById('imageGallery');
+        if (payload.i && payload.i.length > 0) {
+            payload.i.forEach(url => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.onclick = () => openLightbox(url); // Add Lightbox support
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.onerror = () => item.style.display = 'none'; // Hide if broken
+
+                item.appendChild(img);
+                gallery.appendChild(item);
+            });
+            gallery.style.display = 'grid';
+        }
+
+        // --- Show Viewer ---
+        document.getElementById('mainView').style.display = 'block';
+
+        // --- Hit Counter (Public API) ---
+        if (id) {
+            fetch(`https://api.countapi.xyz/hit/ghostpaste_modern_v1/${id}`)
+                .then(r => r.json())
+                .then(d => document.getElementById('viewCount').innerText = d.value)
+                .catch(() => document.getElementById('viewCount').innerText = "1");
+        }
+
+        // --- Expiry Timer ---
+        const updateTimer = () => {
+            const left = ttl - (Date.now() - payload.t);
+            const h = Math.floor(left / 3600000);
+            const m = Math.floor((left % 3600000) / 60000);
+            document.getElementById('expiryTimer').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Expires in: ${h}h ${m}m`;
         };
-        updateClock();
+        updateTimer();
+        setInterval(updateTimer, 60000); // Update every minute
+
+    } catch (e) {
+        showError("Data decryption failed.");
+    }
+};
+
+// --- Lightbox Logic ---
+function openLightbox(url) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('lightbox').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Disable background scrolling
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function showError(msg) {
+    document.getElementById('activeView')?.style.display = 'none';
+    document.getElementById('errorView').style.display = 'block';
+    if (msg) document.querySelector('#errorView p').innerText = msg;
+}
         setInterval(updateClock, 60000);
     } catch (e) {
         document.getElementById('expired').style.display = 'block';
